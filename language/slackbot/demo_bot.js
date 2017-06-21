@@ -63,7 +63,7 @@ const NUM_ENTITIES = 20;
 // The threshold of sentiment score of a posted text, above which the bot will
 // respond. This threshold is rather arbitrary; you may want to play with this
 // value.
-const SENTIMENT_THRESHOLD = 0.3;
+const SENTIMENT_THRESHOLD = 0.42;
 const SEVEN_DAYS_AGO = 60 * 60 * 24 * 7;
 
 const ENTITIES_BASE_SQL = `SELECT name, type, count(name) as wc
@@ -243,7 +243,7 @@ function analyzeSentiment (text) {
       const sentiment = results[0];
 
       // Uncomment the following lines to log the sentiment to the console:
-      // console.log(`Sentiment: ${sentiment}`)
+      console.log(`Sentiment: ${sentiment.score}`)
       // if (sentiment.score >= SENTIMENT_THRESHOLD) {
       //   console.log('Sentiment: positive.');
       // } else if (sentiment.score <= -SENTIMENT_THRESHOLD) {
