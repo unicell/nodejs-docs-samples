@@ -47,6 +47,7 @@ const fs = require('fs');
 const Language = require('@google-cloud/language');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const Cleverbot = require("cleverbot.io");
 
 const controller = Botkit.slackbot({ debug: false });
 
@@ -80,19 +81,16 @@ const TABLE_SQL = `CREATE TABLE if not exists entities (
 );`;
 
 function startController () {
-  if (!process.env.SLACK_TOKEN_PATH) {
-    throw new Error('Please set the SLACK_TOKEN_PATH environment variable!');
+  if (!process.env.BOTKIT_SLACK_TOKEN) {
+    throw new Error('Please set the BOTKIT_SLACK_TOKEN environment variable!');
   }
-
-  let token = fs.readFileSync(process.env.SLACK_TOKEN_PATH, { encoding: 'utf8' });
-  token = token.replace(/\s/g, '');
 
   // Create the table that will store entity information if it does not already
   // exist.
   db.run(TABLE_SQL);
 
   controller
-    .spawn({ token: token })
+    .spawn({ token: process.env.BOTKIT_SLACK_TOKEN })
     .startRTM((err) => {
       if (err) {
         console.error('Failed to start controller!');
@@ -102,13 +100,6 @@ function startController () {
     });
 
   return controller
-    // If the bot gets a DM or mention with 'hello' or 'hi', it will reply.  You
-    // can use this to sanity-check your app without needing to use the NL API.
-    .hears(
-      ['hello', 'hi'],
-      ['direct_message', 'direct_mention', 'mention'],
-      handleSimpleReply
-    )
     // If the bot gets a DM or mention including "top entities", it will reply with
     // a list of the top N most frequent entities used in this channel, as derived
     // by the NL API.
@@ -117,6 +108,13 @@ function startController () {
       ['direct_message', 'direct_mention', 'mention'],
       handleEntitiesReply
     )
+
+    .hears(
+      [''],
+      ['direct_message', 'direct_mention', 'mention'],
+      handleCleverReply
+    )
+
     // For any posted message, the bot will send the text to the NL API for
     // analysis.
     .on('ambient', handleAmbientMessage)
@@ -141,6 +139,30 @@ function startBot (bot, cerr) {
 
 function handleSimpleReply (bot, message) {
   bot.reply(message, 'Hello.');
+}
+
+function handleCleverReply (bot, message) {
+    if (!process.env.CLEVERBOT_API_KEY) {
+        throw new Error('Please set the CLEVERBOT_API_KEY environment variable!');
+    }
+
+    const cleverbot = new Cleverbot(process.env.CLEVERBOT_API_USER, process.env.CLEVERBOT_API_KEY);
+    cleverbot.setNick("Bob");
+    cleverbot.create(function (err, session) {
+    if (err) {
+        console.log('cleverbot create fail.');
+    } else {
+        console.log('cleverbot create success.');
+    }
+    });
+    var msg = message.text;
+    cleverbot.ask(msg, function (err, response) {
+        if (!err) {
+            bot.reply(message, response);
+        } else {
+            console.log('cleverbot err: ' + err);
+        }
+    });
 }
 
 function handleEntitiesReply (bot, message) {
@@ -241,11 +263,27 @@ function handleAmbientMessage (bot, message) {
     .then((sentiment) => {
       if (sentiment.score >= SENTIMENT_THRESHOLD) {
         // We have a positive sentiment score larger than the threshold.
-        bot.reply(message, ':thumbsup:');
+        bot.api.reactions.add({
+            timestamp: message.ts,
+            channel: message.channel,
+            name: 'thumbsup',
+        }, function(err, res) {
+            if (err) {
+                bot.botkit.log('Failed to add emoji reaction :(', err);
+            }
+        });
       } else if (sentiment.score <= -SENTIMENT_THRESHOLD) {
         // We have a negative sentiment score of absolute value larger than
         // the threshold.
-        bot.reply(message, ':thumbsdown:');
+        bot.api.reactions.add({
+            timestamp: message.ts,
+            channel: message.channel,
+            name: 'disappointed',
+        }, function(err, res) {
+            if (err) {
+                bot.botkit.log('Failed to add emoji reaction :(', err);
+            }
+        });
       }
     });
 }

@@ -26,6 +26,7 @@
   "dependencies": {
     "@google-cloud/language": "0.10.5",
     "botkit": "0.5.4",
+    "cleverbot.io": "^1.0.4",
     "sqlite3": "3.1.8"
   },
   "devDependencies": {

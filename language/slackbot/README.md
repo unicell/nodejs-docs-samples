@@ -12,6 +12,7 @@
     - [Build the bot's container](#build-the-bots-container)
     - [Running the container](#running-the-container)
   - [Running the bot locally](#running-the-bot-locally)
+  - [Hack - running the bot with docker-compose](#running-the-bot-with-compomse)
   - [Using the Bot](#using-the-bot)
     - [Sentiment Analysis](#sentiment-analysis)
     - [Entity Analysis](#entity-analysis)
@@ -154,6 +155,18 @@ Then, create a file containing your Slack token, and point `SLACK_TOKEN_PATH` to
 
     echo my-slack-token > slack-token
     SLACK_TOKEN_PATH=./slack-token node demo_bot.js
+
+## Running the bot with compose
+
+Update environment variables in `.env` file (requires docker-compose 1.5.0+ for .env support)
+
+    BOTKIT_SLACK_TOKEN=xxx
+    CLEVERBOT_API_USER=xxx
+    CLEVERBOT_API_KEY=xxx
+
+Start the bot:
+
+    docker-compose up -d
 
 ## Using the Bot
 
